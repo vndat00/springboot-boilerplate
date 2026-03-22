@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dticket
+    username: postgres
+    password: 123456
+    hikari:
+      max-lifetime: 60000
+      maximum-pool-size: 20
+
+server-properties:
+  url: http://localhost:8080/api
+  version: /v1
+local:
+  base-dir: data/
+storage:
+  azure:
+    account-name: ${AZURE_STORAGE_ACCOUNT:devstoreaccount1}
+    account-key: ${AZURE_STORAGE_KEY:Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==}
+    endpoint: ${AZURE_STORAGE_ENDPOINT:http://localhost:10000/devstoreaccount1}
+    connection-string: ${AZURE_STORAGE_CONNECTION_STRING:}
+    container: ${AZURE_STORAGE_CONTAINER:app-storage}
+    sas-expiry-minutes: ${AZURE_STORAGE_SAS_EXPIRY_MINUTES:15}

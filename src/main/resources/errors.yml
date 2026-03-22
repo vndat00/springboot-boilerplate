@@ -1,0 +1,60 @@
+internal_server_error:
+  code: ERR.SERVER
+  message: Internal server error
+
+invalid_request:
+  code: ERR.INVALID_REQUEST
+  message: Invalid request
+
+page_not_found:
+  code: ERR.PAGE_NOT_FOUND
+  message: Page not found
+
+bad_request:
+  code: ERR.BAD_REQUEST
+  message: Bad request
+
+maximum_upload_size_exceeded:
+  code: ERR.MAX_UPLOAD_SIZE
+  message: Maximum upload size exceeded
+
+storage_policy_not_found:
+  code: ERR.STORAGE_POLICY_NOT_FOUND
+  message: Storage policy not found
+
+storage_file_too_large:
+  code: ERR.STORAGE_FILE_TOO_LARGE
+  message: File is too large for this use case
+
+storage_invalid_content_type:
+  code: ERR.STORAGE_INVALID_CONTENT_TYPE
+  message: Content type is not allowed
+
+storage_direct_upload_not_allowed:
+  code: ERR.STORAGE_DIRECT_UPLOAD_NOT_ALLOWED
+  message: Direct upload is not allowed for this use case
+
+storage_upload_session_not_found:
+  code: ERR.STORAGE_UPLOAD_SESSION_NOT_FOUND
+  message: Upload session not found
+
+storage_object_not_found:
+  code: ERR.STORAGE_OBJECT_NOT_FOUND
+  message: Storage object not found
+
+storage_upload_session_mismatch:
+  code: ERR.STORAGE_UPLOAD_SESSION_MISMATCH
+  message: Upload session and object do not match
+
+storage_upload_not_found_on_blob:
+  code: ERR.STORAGE_UPLOAD_NOT_FOUND_ON_BLOB
+  message: Uploaded file not found on blob storage
+
+storage_backend_upload_failed:
+  code: ERR.STORAGE_BACKEND_UPLOAD_FAILED
+  message: Backend upload failed
+
+storage_object_not_uploaded:
+  code: ERR.STORAGE_OBJECT_NOT_UPLOADED
+  message: Object must be uploaded before binding
+
