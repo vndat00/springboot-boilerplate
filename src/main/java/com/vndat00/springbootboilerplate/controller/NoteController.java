@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -56,13 +57,18 @@ public class NoteController {
   public ResponseEntity<ResponseDataAPI> getAll(
       @RequestParam(name = "sort", defaultValue = "created_at") String sortBy,
       @RequestParam(name = "order", defaultValue = "desc") String order,
+      @RequestParam(name = "sorts", required = false) String sorts,
       @RequestParam(name = "page", defaultValue = "1") int page,
       @RequestParam(name = "paging", defaultValue = "10") int paging,
       @ModelAttribute NoteSearchRequest searchRequest) {
     if (!searchRequest.hasValidRanges()) {
       throw new BadRequestException(MessageConstant.BAD_REQUEST);
     }
-    Pageable normalizedPage = PagingUtils.makePageRequest(sortBy, order, page, paging);
+    // Use multi-field sort if provided, otherwise fallback to single field sort
+    Pageable normalizedPage =
+        StringUtils.hasText(sorts)
+            ? PagingUtils.makePageRequestMultiSort(sorts, order, page, paging)
+            : PagingUtils.makePageRequest(sortBy, order, page, paging);
     return ResponseEntity.ok(noteService.getAll(normalizedPage, searchRequest));
   }
 

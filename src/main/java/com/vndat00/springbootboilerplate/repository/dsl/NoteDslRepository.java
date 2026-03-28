@@ -119,18 +119,31 @@ public class NoteDslRepository {
   }
 
   private Page<Note> paginate(Pageable pageable, JPAQuery<Note> baseQuery) {
-    Sort.Order sortOrder =
-        pageable.getSort().stream().findFirst().orElse(Sort.Order.desc("createdAt"));
+    JPAQuery<Note> selectQuery = baseQuery.clone();
 
-    JPAQuery<Note> selectQuery =
-        baseQuery
-            .clone()
-            .orderBy(getOrderSpecifier(sortOrder.getProperty(), sortOrder.getDirection().name()));
+    // Build multiple order specifiers from pageable
+    OrderSpecifier<?>[] orderSpecifiers = buildOrderSpecifiers(pageable.getSort());
+    if (orderSpecifiers.length > 0) {
+      selectQuery.orderBy(orderSpecifiers);
+    } else {
+      // Fallback to created date desc if no sort specified
+      selectQuery.orderBy(new OrderSpecifier<>(Order.DESC, qNote.createdAt, NullsLast));
+    }
 
     selectQuery.limit(pageable.getPageSize()).offset(pageable.getOffset());
 
     List<Note> records = selectQuery.fetch();
     return new PageImpl<>(records, pageable, getTotalCount(baseQuery));
+  }
+
+  private OrderSpecifier<?>[] buildOrderSpecifiers(Sort sort) {
+    if (sort == null || sort.isUnsorted()) {
+      return new OrderSpecifier[0];
+    }
+
+    return sort.stream()
+        .map(order -> getOrderSpecifier(order.getProperty(), order.getDirection().name()))
+        .toArray(OrderSpecifier[]::new);
   }
 
   private long getTotalCount(JPAQuery<Note> baseQuery) {
