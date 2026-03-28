@@ -1,20 +1,24 @@
 package com.vndat00.springbootboilerplate.controller;
 
-import com.vndat00.springbootboilerplate.common.CommonFunction;
+import com.vndat00.springbootboilerplate.constant.MessageConstant;
+import com.vndat00.springbootboilerplate.exception.BadRequestException;
 import com.vndat00.springbootboilerplate.payload.general.ResponseDataAPI;
 import com.vndat00.springbootboilerplate.payload.request.NoteRequest;
+import com.vndat00.springbootboilerplate.payload.request.NoteSearchRequest;
 import com.vndat00.springbootboilerplate.payload.response.ErrorResponse;
 import com.vndat00.springbootboilerplate.payload.response.NoteResponse;
 import com.vndat00.springbootboilerplate.service.NoteService;
 import com.vndat00.springbootboilerplate.utils.PagingUtils;
 import com.vndat00.springbootboilerplate.utils.ResponseDataUtils;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -23,14 +27,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.UUID;
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1")
 public class NoteController {
 
-  private static final ErrorResponse NOTE_NOT_FOUND = new ErrorResponse("ERR.NOTE_NOT_FOUND", "Note not found");
+  private static final ErrorResponse NOTE_NOT_FOUND =
+      new ErrorResponse("ERR.NOTE_NOT_FOUND", "Note not found");
 
   private final NoteService noteService;
 
@@ -43,7 +46,8 @@ public class NoteController {
   public ResponseEntity<ResponseDataAPI> getById(@PathVariable UUID id) {
     NoteResponse note = noteService.getById(id);
     if (note == null) {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseDataAPI.error(NOTE_NOT_FOUND));
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+          .body(ResponseDataAPI.error(NOTE_NOT_FOUND));
     }
     return ResponseEntity.ok(ResponseDataUtils.toResponseData(note));
   }
@@ -54,10 +58,12 @@ public class NoteController {
       @RequestParam(name = "order", defaultValue = "desc") String order,
       @RequestParam(name = "page", defaultValue = "1") int page,
       @RequestParam(name = "paging", defaultValue = "10") int paging,
-      @RequestParam(value = "content", defaultValue = "") String content) {
+      @ModelAttribute NoteSearchRequest searchRequest) {
+    if (!searchRequest.hasValidRanges()) {
+      throw new BadRequestException(MessageConstant.BAD_REQUEST);
+    }
     Pageable normalizedPage = PagingUtils.makePageRequest(sortBy, order, page, paging);
-    return ResponseEntity.ok(
-        noteService.getAll(normalizedPage, CommonFunction.handleContentSearch(content)));
+    return ResponseEntity.ok(noteService.getAll(normalizedPage, searchRequest));
   }
 
   @PutMapping("/notes/{id}")
@@ -65,7 +71,8 @@ public class NoteController {
       @PathVariable UUID id, @Valid @RequestBody NoteRequest request) {
     NoteResponse updated = noteService.update(id, request);
     if (updated == null) {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseDataAPI.error(NOTE_NOT_FOUND));
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+          .body(ResponseDataAPI.error(NOTE_NOT_FOUND));
     }
     return ResponseEntity.ok(ResponseDataUtils.toResponseData(updated));
   }
@@ -74,7 +81,8 @@ public class NoteController {
   public ResponseEntity<ResponseDataAPI> delete(@PathVariable UUID id) {
     boolean deleted = noteService.delete(id);
     if (!deleted) {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseDataAPI.error(NOTE_NOT_FOUND));
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+          .body(ResponseDataAPI.error(NOTE_NOT_FOUND));
     }
     return ResponseEntity.ok(ResponseDataUtils.toResponseData());
   }

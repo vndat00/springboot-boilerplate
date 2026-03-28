@@ -17,6 +17,10 @@ public interface StorageObjectMapper {
   @Mapping(target = "actualSize", ignore = true)
   @Mapping(target = "status", ignore = true)
   @Mapping(target = "uploadMethod", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
+  @Mapping(target = "deletedAt", ignore = true)
+  @Mapping(target = "note", ignore = true)
   StorageObject toEntity(PrepareUploadRequest request);
 
   @Mapping(target = "id", ignore = true)
@@ -28,6 +32,10 @@ public interface StorageObjectMapper {
   @Mapping(target = "actualSize", ignore = true)
   @Mapping(target = "status", ignore = true)
   @Mapping(target = "uploadMethod", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
+  @Mapping(target = "deletedAt", ignore = true)
+  @Mapping(target = "note", ignore = true)
   StorageObject toEntity(BackendUploadRequest request);
 
   @Mapping(target = "url", expression = "java(getUrl(object))")

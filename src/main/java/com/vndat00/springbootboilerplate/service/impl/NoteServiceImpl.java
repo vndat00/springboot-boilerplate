@@ -10,10 +10,12 @@ import com.vndat00.springbootboilerplate.mapper.NoteMapper;
 import com.vndat00.springbootboilerplate.mapper.StorageObjectMapper;
 import com.vndat00.springbootboilerplate.payload.general.ResponseDataAPI;
 import com.vndat00.springbootboilerplate.payload.request.NoteRequest;
+import com.vndat00.springbootboilerplate.payload.request.NoteSearchRequest;
 import com.vndat00.springbootboilerplate.payload.response.NoteResponse;
 import com.vndat00.springbootboilerplate.payload.response.storage.StorageObjectResponse;
 import com.vndat00.springbootboilerplate.repository.NoteRepository;
 import com.vndat00.springbootboilerplate.repository.StorageObjectRepository;
+import com.vndat00.springbootboilerplate.repository.dsl.NoteDslRepository;
 import com.vndat00.springbootboilerplate.service.NoteService;
 import com.vndat00.springbootboilerplate.utils.ResponseDataUtils;
 import java.util.List;
@@ -32,6 +34,7 @@ public class NoteServiceImpl implements NoteService {
   private final StorageObjectRepository storageObjectRepository;
   private final NoteMapper noteMapper;
   private final StorageObjectMapper storageObjectMapper;
+  private final NoteDslRepository noteDslRepository;
 
   @Override
   public NoteResponse create(NoteRequest request) {
@@ -71,8 +74,8 @@ public class NoteServiceImpl implements NoteService {
   }
 
   @Override
-  public ResponseDataAPI getAll(Pageable pageable, String content) {
-    Page<Note> notes = noteRepository.findAllBySearch(pageable, content);
+  public ResponseDataAPI getAll(Pageable pageable, NoteSearchRequest searchRequest) {
+    Page<Note> notes = noteDslRepository.findAll(searchRequest, pageable);
     List<UUID> noteIds = notes.getContent().stream().map(Note::getId).toList();
 
     Map<UUID, List<StorageObjectResponse>> attachmentMap = loadAttachmentMap(noteIds);

@@ -12,15 +12,22 @@ import org.mapstruct.MappingTarget;
 public interface NoteMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "content", source = "note")
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
+  @Mapping(target = "deletedAt", ignore = true)
   Note toEntity(NoteRequest request);
 
   @Mapping(
       target = "id",
       expression = "java(note.getId() != null ? note.getId().toString() : null)")
   @Mapping(target = "note", source = "content")
+  @Mapping(target = "attachments", ignore = true)
   NoteResponse toResponse(Note note);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "content", source = "note")
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
+  @Mapping(target = "deletedAt", ignore = true)
   void updateEntity(NoteRequest request, @MappingTarget Note note);
 }
