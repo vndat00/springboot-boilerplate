@@ -3,7 +3,6 @@ package com.vndat00.springbootboilerplate.importexport.parser;
 import com.vndat00.springbootboilerplate.importexport.core.FileFormat;
 import com.vndat00.springbootboilerplate.importexport.core.ParsedFile;
 import com.vndat00.springbootboilerplate.importexport.core.ParsedRow;
-import com.vndat00.springbootboilerplate.importexport.core.TabularFileParser;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;

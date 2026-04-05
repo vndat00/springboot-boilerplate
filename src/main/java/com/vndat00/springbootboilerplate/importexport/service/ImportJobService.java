@@ -15,7 +15,9 @@ import com.vndat00.springbootboilerplate.importexport.core.ImportValidationMessa
 import com.vndat00.springbootboilerplate.importexport.core.ParsedFile;
 import com.vndat00.springbootboilerplate.importexport.core.ParsedRow;
 import com.vndat00.springbootboilerplate.importexport.core.Severity;
+import com.vndat00.springbootboilerplate.importexport.definition.ImportDefinitionRegistry;
 import com.vndat00.springbootboilerplate.importexport.parser.TabularFileParserResolver;
+import com.vndat00.springbootboilerplate.payload.request.importexport.ColumnMappingItem;
 import com.vndat00.springbootboilerplate.payload.request.importexport.ColumnMappingRequest;
 import com.vndat00.springbootboilerplate.payload.response.importexport.ImportDefinitionResponse;
 import com.vndat00.springbootboilerplate.payload.response.importexport.ImportFieldMetadataResponse;
@@ -78,7 +80,8 @@ public class ImportJobService {
 
     ImportJob saved = importJobRepository.save(job);
 
-    List<SuggestedMappingResponse> suggestedMappings = suggestMappings(parsedFile.headers(), definition);
+    List<SuggestedMappingResponse> suggestedMappings =
+        suggestMappings(parsedFile.headers(), definition);
 
     return new ImportJobCreateResponse(
         saved.getId(),
@@ -115,7 +118,9 @@ public class ImportJobService {
 
     Map<String, String> mapping =
         request.mappings().stream()
-            .collect(java.util.stream.Collectors.toMap(r -> r.sourceColumn(), r -> r.targetField()));
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    ColumnMappingItem::sourceColumn, ColumnMappingItem::targetField));
 
     List<ImportValidationMessage> mappingErrors =
         importMappingService.validateMappings(definition.fields(), mapping, parsedFile.headers());
@@ -191,10 +196,12 @@ public class ImportJobService {
       ImportJobRow row = rowByNumber.get(datasetMessage.rowNumber());
       if (row != null) {
         messageEntities.add(toMessageEntity(row, datasetMessage));
-        if (datasetMessage.severity() == Severity.ERROR && row.getRowStatus() != ImportRowStatus.ERROR) {
+        if (datasetMessage.severity() == Severity.ERROR
+            && row.getRowStatus() != ImportRowStatus.ERROR) {
           row.setRowStatus(ImportRowStatus.ERROR);
         }
-        if (datasetMessage.severity() == Severity.WARNING && row.getRowStatus() == ImportRowStatus.VALID) {
+        if (datasetMessage.severity() == Severity.WARNING
+            && row.getRowStatus() == ImportRowStatus.VALID) {
           row.setRowStatus(ImportRowStatus.WARNING);
         }
       }
@@ -246,7 +253,8 @@ public class ImportJobService {
 
     int imported = 0;
     for (int i = 0; i < importableRows.size(); i += CHUNK_SIZE) {
-      List<ImportJobRow> chunk = importableRows.subList(i, Math.min(i + CHUNK_SIZE, importableRows.size()));
+      List<ImportJobRow> chunk =
+          importableRows.subList(i, Math.min(i + CHUNK_SIZE, importableRows.size()));
       List<Object> dtos =
           chunk.stream().map(row -> toDto(definition, row.getMappedPayloadJson())).toList();
       saveChunk(definition, dtos);
@@ -255,7 +263,8 @@ public class ImportJobService {
     }
 
     List<ImportJobRow> skippedRows =
-        rowRepository.findAllByJobAndRowStatusInOrderByRowNumberAsc(job, Set.of(ImportRowStatus.ERROR));
+        rowRepository.findAllByJobAndRowStatusInOrderByRowNumberAsc(
+            job, Set.of(ImportRowStatus.ERROR));
     skippedRows.forEach(row -> row.setRowStatus(ImportRowStatus.SKIPPED));
 
     rowRepository.saveAll(importableRows);
@@ -434,11 +443,13 @@ public class ImportJobService {
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private List<ImportValidationMessage> runRowValidators(String entityType, Object dto, int rowNumber) {
+  private List<ImportValidationMessage> runRowValidators(
+      String entityType, Object dto, int rowNumber) {
     List<ImportValidationMessage> messages = new ArrayList<>();
     for (var validator : validatorRegistry.rowValidators(entityType)) {
-      messages.addAll(((com.vndat00.springbootboilerplate.importexport.core.ImportRowValidator) validator)
-          .validate(dto, rowNumber));
+      messages.addAll(
+          ((com.vndat00.springbootboilerplate.importexport.core.ImportRowValidator) validator)
+              .validate(dto, rowNumber));
     }
     return messages;
   }
@@ -447,8 +458,9 @@ public class ImportJobService {
   private List<ImportValidationMessage> runDatasetValidators(String entityType, List<Object> dtos) {
     List<ImportValidationMessage> messages = new ArrayList<>();
     for (var validator : validatorRegistry.datasetValidators(entityType)) {
-      messages.addAll(((com.vndat00.springbootboilerplate.importexport.core.ImportDatasetValidator) validator)
-          .validate(dtos));
+      messages.addAll(
+          ((com.vndat00.springbootboilerplate.importexport.core.ImportDatasetValidator) validator)
+              .validate(dtos));
     }
     return messages;
   }
@@ -464,4 +476,3 @@ public class ImportJobService {
     return entity;
   }
 }
-

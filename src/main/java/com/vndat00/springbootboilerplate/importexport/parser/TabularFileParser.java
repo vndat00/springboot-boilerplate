@@ -1,5 +1,7 @@
-package com.vndat00.springbootboilerplate.importexport.core;
+package com.vndat00.springbootboilerplate.importexport.parser;
 
+import com.vndat00.springbootboilerplate.importexport.core.FileFormat;
+import com.vndat00.springbootboilerplate.importexport.core.ParsedFile;
 import java.io.IOException;
 import java.io.InputStream;
 

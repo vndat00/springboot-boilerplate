@@ -1,5 +1,6 @@
 package com.vndat00.springbootboilerplate.importexport.core;
 
+import com.vndat00.springbootboilerplate.domain.enums.importexport.DataType;
 import java.util.List;
 
 public record ImportFieldDefinition(

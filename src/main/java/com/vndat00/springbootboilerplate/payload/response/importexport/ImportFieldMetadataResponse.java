@@ -1,6 +1,6 @@
 package com.vndat00.springbootboilerplate.payload.response.importexport;
 
-import com.vndat00.springbootboilerplate.importexport.core.DataType;
+import com.vndat00.springbootboilerplate.domain.enums.importexport.DataType;
 import java.util.List;
 
 public record ImportFieldMetadataResponse(

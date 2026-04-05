@@ -1,12 +1,13 @@
-package com.vndat00.springbootboilerplate.importexport.note;
+package com.vndat00.springbootboilerplate.importexport.definition;
 
 import com.vndat00.springbootboilerplate.domain.enums.NoteStatus;
+import com.vndat00.springbootboilerplate.domain.enums.importexport.DataType;
 import com.vndat00.springbootboilerplate.domain.model.Note;
 import com.vndat00.springbootboilerplate.importexport.common.MappedValueHelper;
 import com.vndat00.springbootboilerplate.importexport.converter.DateTimeImportConverter;
-import com.vndat00.springbootboilerplate.importexport.core.DataType;
 import com.vndat00.springbootboilerplate.importexport.core.ImportDefinition;
 import com.vndat00.springbootboilerplate.importexport.core.ImportFieldDefinition;
+import com.vndat00.springbootboilerplate.importexport.note.NoteImportRowDto;
 import com.vndat00.springbootboilerplate.repository.NoteRepository;
 import java.util.List;
 import java.util.Map;

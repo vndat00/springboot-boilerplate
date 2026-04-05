@@ -4,6 +4,7 @@ import com.vndat00.springbootboilerplate.importexport.core.ExportColumnDefinitio
 import com.vndat00.springbootboilerplate.importexport.core.ExportDefinition;
 import com.vndat00.springbootboilerplate.importexport.core.ImportDefinition;
 import com.vndat00.springbootboilerplate.importexport.core.ImportFieldDefinition;
+import com.vndat00.springbootboilerplate.importexport.definition.ImportDefinitionRegistry;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;

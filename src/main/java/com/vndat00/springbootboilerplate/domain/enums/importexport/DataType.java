@@ -1,4 +1,4 @@
-package com.vndat00.springbootboilerplate.importexport.core;
+package com.vndat00.springbootboilerplate.domain.enums.importexport;
 
 public enum DataType {
   STRING,

@@ -1,4 +1,4 @@
-package com.vndat00.springbootboilerplate.importexport.service;
+package com.vndat00.springbootboilerplate.importexport.definition;
 
 import com.vndat00.springbootboilerplate.constant.MessageConstant;
 import com.vndat00.springbootboilerplate.exception.NotFoundException;
