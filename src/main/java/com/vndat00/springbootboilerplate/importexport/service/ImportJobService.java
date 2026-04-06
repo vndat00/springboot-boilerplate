@@ -1,6 +1,8 @@
 package com.vndat00.springbootboilerplate.importexport.service;
 
 import com.vndat00.springbootboilerplate.constant.MessageConstant;
+import com.vndat00.springbootboilerplate.domain.enums.object_storage.StorageProvider;
+import com.vndat00.springbootboilerplate.domain.enums.object_storage.StorageUseCase;
 import com.vndat00.springbootboilerplate.domain.model.ImportJob;
 import com.vndat00.springbootboilerplate.domain.model.ImportJobColumnMapping;
 import com.vndat00.springbootboilerplate.domain.model.ImportJobRow;
@@ -19,6 +21,7 @@ import com.vndat00.springbootboilerplate.importexport.definition.ImportDefinitio
 import com.vndat00.springbootboilerplate.importexport.parser.TabularFileParserResolver;
 import com.vndat00.springbootboilerplate.payload.request.importexport.ColumnMappingItem;
 import com.vndat00.springbootboilerplate.payload.request.importexport.ColumnMappingRequest;
+import com.vndat00.springbootboilerplate.payload.request.storage.BackendUploadRequest;
 import com.vndat00.springbootboilerplate.payload.response.importexport.ImportDefinitionResponse;
 import com.vndat00.springbootboilerplate.payload.response.importexport.ImportFieldMetadataResponse;
 import com.vndat00.springbootboilerplate.payload.response.importexport.ImportJobCreateResponse;
@@ -27,32 +30,35 @@ import com.vndat00.springbootboilerplate.payload.response.importexport.ImportPre
 import com.vndat00.springbootboilerplate.payload.response.importexport.ImportPreviewResponse;
 import com.vndat00.springbootboilerplate.payload.response.importexport.ImportPreviewRowResponse;
 import com.vndat00.springbootboilerplate.payload.response.importexport.SuggestedMappingResponse;
+import com.vndat00.springbootboilerplate.payload.response.storage.StorageObjectResponse;
 import com.vndat00.springbootboilerplate.repository.ImportJobColumnMappingRepository;
 import com.vndat00.springbootboilerplate.repository.ImportJobRepository;
 import com.vndat00.springbootboilerplate.repository.ImportJobRowMessageRepository;
 import com.vndat00.springbootboilerplate.repository.ImportJobRowRepository;
+import com.vndat00.springbootboilerplate.service.StorageObjectService;
+import com.vndat00.springbootboilerplate.storage.provider.BlobStorageProvider;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
 public class ImportJobService {
   private static final int CHUNK_SIZE = 200;
+  private static final String BLOB_SOURCE_PREFIX = "abs://";
 
   private final ImportJobRepository importJobRepository;
   private final ImportJobColumnMappingRepository mappingRepository;
@@ -63,18 +69,20 @@ public class ImportJobService {
   private final TabularFileParserResolver parserResolver;
   private final ImportMappingService importMappingService;
   private final BeanValidationWrapper beanValidationWrapper;
+  private final StorageObjectService storageObjectService;
+  private final BlobStorageProvider blobStorageProvider;
 
   @Transactional
   public ImportJobCreateResponse createJob(String entityType, MultipartFile file) {
     ImportDefinition<?> definition = definitionRegistry.get(entityType);
-    Path sourcePath = saveSourceFile(file);
+    String sourcePath = uploadSourceFile(file);
     ParsedFile parsedFile = readParsedFile(sourcePath, file.getOriginalFilename());
 
     ImportJob job = new ImportJob();
     job.setEntityType(definition.entityType());
     job.setFileName(file.getOriginalFilename());
     job.setFileType(parsedFile.fileFormat());
-    job.setSourceFilePath(sourcePath.toString());
+    job.setSourceFilePath(sourcePath);
     job.setStatus(ImportJobStatus.CREATED);
     resetSummary(job);
 
@@ -113,7 +121,7 @@ public class ImportJobService {
   @Transactional
   public void saveMapping(UUID jobId, ColumnMappingRequest request) {
     ImportJob job = getJobOrThrow(jobId);
-    ParsedFile parsedFile = readParsedFile(Path.of(job.getSourceFilePath()), job.getFileName());
+    ParsedFile parsedFile = readParsedFile(job.getSourceFilePath(), job.getFileName());
     ImportDefinition<?> definition = definitionRegistry.get(job.getEntityType());
 
     Map<String, String> mapping =
@@ -155,7 +163,7 @@ public class ImportJobService {
       throw new BadRequestException(MessageConstant.BAD_REQUEST);
     }
 
-    ParsedFile parsedFile = readParsedFile(Path.of(job.getSourceFilePath()), job.getFileName());
+    ParsedFile parsedFile = readParsedFile(job.getSourceFilePath(), job.getFileName());
 
     clearRows(job);
 
@@ -289,26 +297,52 @@ public class ImportJobService {
         .orElseThrow(() -> new NotFoundException(MessageConstant.PAGE_NOT_FOUND));
   }
 
-  private ParsedFile readParsedFile(Path path, String fileName) {
-    try (InputStream inputStream = Files.newInputStream(path)) {
+  private ParsedFile readParsedFile(String sourcePath, String fileName) {
+    try (InputStream inputStream = openSourceInputStream(sourcePath)) {
       return parserResolver.resolve(fileName).parse(inputStream);
     } catch (IOException ex) {
       throw new BadRequestException(MessageConstant.BAD_REQUEST);
     }
   }
 
-  private Path saveSourceFile(MultipartFile file) {
+  private InputStream openSourceInputStream(String sourcePath) throws IOException {
+    if (!StringUtils.hasText(sourcePath)) {
+      throw new BadRequestException(MessageConstant.BAD_REQUEST);
+    }
+
+    if (sourcePath.startsWith(BLOB_SOURCE_PREFIX)) {
+      BlobLocation blobLocation = parseBlobLocation(sourcePath);
+      return blobStorageProvider.openInputStream(blobLocation.containerName(), blobLocation.blobKey());
+    }
+
+    // Backward compatibility for jobs created before blob migration.
+    return Files.newInputStream(Path.of(sourcePath));
+  }
+
+  private String uploadSourceFile(MultipartFile file) {
     try {
-      Path dir = Path.of(System.getProperty("java.io.tmpdir"), "spring-boot-boilerplate-import");
-      Files.createDirectories(dir);
-      String safeName = Objects.requireNonNullElse(file.getOriginalFilename(), "upload.dat");
-      Path target = dir.resolve(UUID.randomUUID() + "_" + safeName);
-      Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
-      return target;
-    } catch (IOException ex) {
+      BackendUploadRequest request = new BackendUploadRequest();
+      request.setStorageProvider(StorageProvider.AZURE_BLOB_STORAGE);
+      request.setStorageUseCase(StorageUseCase.IMPORT_FILE);
+
+      StorageObjectResponse uploaded = storageObjectService.uploadViaBackend(file, request);
+      return BLOB_SOURCE_PREFIX + uploaded.getContainerName() + "/" + uploaded.getBlobKey();
+    } catch (RuntimeException ex) {
       throw new BadRequestException(MessageConstant.BAD_REQUEST);
     }
   }
+
+  private BlobLocation parseBlobLocation(String sourcePath) {
+    String payload = sourcePath.substring(BLOB_SOURCE_PREFIX.length());
+    int separatorIndex = payload.indexOf('/');
+    if (separatorIndex <= 0 || separatorIndex == payload.length() - 1) {
+      throw new BadRequestException(MessageConstant.BAD_REQUEST);
+    }
+
+    return new BlobLocation(payload.substring(0, separatorIndex), payload.substring(separatorIndex + 1));
+  }
+
+  private record BlobLocation(String containerName, String blobKey) {}
 
   private List<SuggestedMappingResponse> suggestMappings(
       List<String> headers, ImportDefinition<?> definition) {

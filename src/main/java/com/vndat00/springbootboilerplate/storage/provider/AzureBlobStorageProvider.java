@@ -10,13 +10,12 @@ import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.vndat00.springbootboilerplate.config.properties.StorageAzureProperties;
 import com.vndat00.springbootboilerplate.exception.NotFoundException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-
 import java.io.InputStream;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Component
 @RequiredArgsConstructor
@@ -61,6 +60,15 @@ public class AzureBlobStorageProvider implements BlobStorageProvider {
     if (StringUtils.hasText(contentType)) {
       blobClient.setHttpHeaders(new BlobHttpHeaders().setContentType(contentType));
     }
+  }
+
+  @Override
+  public InputStream openInputStream(String containerName, String blobKey) {
+    BlobClient blobClient = getBlobClient(containerName, blobKey);
+    if (Boolean.FALSE.equals(blobClient.exists())) {
+      throw new NotFoundException("storage_object_not_found");
+    }
+    return blobClient.openInputStream();
   }
 
   @Override
